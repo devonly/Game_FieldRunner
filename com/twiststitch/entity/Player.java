@@ -1,9 +1,15 @@
 package com.twiststitch.entity;
 
 import com.twiststitch.game.Scene;
-
 import java.util.Scanner;
 
+/***
+ * The Player class is a controllable entity (by the player)
+ *
+ * @author  Devon Ly
+ * @version 1.0
+ * @since   2020-08-07
+ */
 public class Player extends Entity {
 
     public Player(String name, Scene playingField, int startingHealth) {

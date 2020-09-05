@@ -1,12 +1,22 @@
 package com.twiststitch.entity;
 
 import com.twiststitch.game.Scene;
-import com.twiststitch.primative.Point2d;
 import com.twiststitch.pathfinding.Pathfinding;
 import com.twiststitch.pathfinding.PathfindingDijkstra;
+import com.twiststitch.primative.Dimension2d;
+import com.twiststitch.primative.Edge;
+import com.twiststitch.primative.Node;
 
 import java.util.Optional;
 
+/***
+ * The Agent class serves as the player's opponent and/or enemy.
+ * It's purpose is to seek and chase the player.
+ *
+ * @author  Devon Ly
+ * @version 1.0
+ * @since   2020-08-07
+ */
 public class Agent extends Entity {
 
     private Pathfinding searchAlgorithm;
@@ -31,14 +41,16 @@ public class Agent extends Entity {
         decreaseTurnsToDelay();
 
         if (turnsToDelay == 0) {
-            Point2d newPosition = searchAlgorithm.getNextPosition(this.position, player.position );
-            this.position = newPosition;
+            Node newPosition = searchAlgorithm.getNextPosition(this.position, player.position );
+            Edge traversalEdge = playingField.getField().getEdge(this.position, newPosition);
 
-            if(playingField.getFieldTraversalCost(newPosition.x,newPosition.y) != 0) {
-                turnsToDelay += (int)Math.ceil(playingField.getFieldTraversalCost(newPosition.x,newPosition.y) / traversalEaseFactor) ;
+
+            if (traversalEdge.traversalCost != 0) {
+                turnsToDelay += (int)Math.ceil(traversalEdge.traversalCost / traversalEaseFactor) ;
             }
 
-            System.out.println(this.name + " moved to (" + newPosition.x + "," + newPosition.y + ")");
+            this.position = newPosition;
+            System.out.println(this.name + " moved to (" + newPosition.position.x + "," + newPosition.position.y + ")");
 
             System.out.println("Seeking Player...");
             if (actionAgainstPlayer()) {
@@ -84,13 +96,13 @@ public class Agent extends Entity {
 
     private boolean isPlayerAdjacent() {
 
-        Point2d searchPoint = new Point2d();
+        Dimension2d searchPoint = new Dimension2d();
 
         // check around to set if player is adjacent or at the same location
         for (int yOffset = -1; yOffset < 2; yOffset++) {
             for (int xOffset = -1; xOffset < 2; xOffset++) {
 
-                searchPoint.copy(this.position);
+                searchPoint.copy(this.position.position);
                 searchPoint.x += xOffset;
                 searchPoint.y += yOffset;
 

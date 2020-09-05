@@ -1,7 +1,7 @@
 package com.twiststitch.pathfinding;
 
 import com.twiststitch.game.Scene;
-import com.twiststitch.primative.Point2d;
+import com.twiststitch.primative.Node;
 
 public abstract class Pathfinding {
 
@@ -11,6 +11,6 @@ public abstract class Pathfinding {
         this.playingField = playingField;
     }
 
-    public abstract Point2d getNextPosition(Point2d currentPosition, Point2d targetPosition);
+    public abstract Node getNextPosition(Node startingNode, Node targetNode);
 
 }

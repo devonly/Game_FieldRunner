@@ -1,182 +1,188 @@
 package com.twiststitch.pathfinding;
 
 import com.twiststitch.game.Scene;
-import com.twiststitch.primative.Point2d;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Optional;
+import com.twiststitch.primative.Dimension2d;
+import com.twiststitch.primative.Edge;
+import com.twiststitch.primative.Node;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class PathfindingDijkstra extends Pathfinding {
 
-    private ArrayList<Point2d> calculatedPath; // this is the calculated shorted path
-    private ArrayList<PathfindingNode> traversalPath;
+    private ArrayList<Edge> shortestPath; // this is the calculated shorted path
+    private ArrayList<Edge> traversalPath;
 
     public PathfindingDijkstra(Scene playingField) {
         super(playingField);
-        traversalPath = new ArrayList<PathfindingNode>();
-        calculatedPath = new ArrayList<Point2d>();
+        traversalPath = new ArrayList<Edge>();
+        shortestPath = new ArrayList<Edge>();
     }
 
-    public Point2d getNextPosition(Point2d startPosition, Point2d targetPosition) {
+    /***
+     * Returns the next position the agent should move to based on the shortest path found
+     *
+     * @param startingNode The position where the agent should start search from
+     * @param targetNode The position where the target object / player is located
+     * @return
+     */
+    public Node getNextPosition(Node startingNode, Node targetNode) {
 
-        traversalPath = new ArrayList<PathfindingNode>();
-        calculatedPath = new ArrayList<Point2d>();
+        // reset these members variable each time. As paths and traversal costs need
+        // to be recalculated
+        traversalPath = new ArrayList<Edge>();
+        shortestPath = new ArrayList<Edge>();
 
-        calcTraversalCost(startPosition);
-        return reverseTraversal(startPosition, targetPosition);
+        // reset the edge checked flag
+        for ( Edge edge : playingField.getField().getEdgeList() ) {
+            edge.checkFlag = false;
+        }
+
+        generateTraversalPath(startingNode);
+        calcShortestPath(startingNode, targetNode);
+        return shortestPath.get(0).targetNode;
     }
 
-    private Point2d reverseTraversal(Point2d startPosition, Point2d targetPosition) {
-
-        ArrayList<PathfindingNode> shortestPath  = new ArrayList<PathfindingNode>();
-
-        //1. start at end point
-        PathfindingNode startNode;
-        PathfindingNode searchNode;
-        Optional<PathfindingNode> filterSearchNode = traversalPath.stream().filter(o -> o.position.equals(targetPosition)).findFirst();
-        Optional<PathfindingNode> filterFirstNode = traversalPath.stream().filter(o -> o.position.equals(startPosition)).findFirst();
-
-
-        if (filterSearchNode.isPresent()) {
-            searchNode = filterSearchNode.get();
-        } else {
-            //??should probably do something else, return error perhaps
-            System.out.println("Error: cannot find end node");
-            searchNode = new PathfindingNode(new Point2d(0,0), null,  0);
-        }
-        startNode = searchNode;
-
-        if (filterFirstNode.isPresent()) {
-            startNode = filterFirstNode.get();
-        } else {
-            //??should probably do something else, return error perhaps
-            System.out.println("Error: cannot find start node");
-            startNode = new PathfindingNode(new Point2d(0,0), null,  0);
-        }
-
-        // backtrace until we get the next node to move to
-        while ( !searchNode.previousNode.equals(startNode) ) {
-            searchNode = searchNode.previousNode;
-            calculatedPath.add(searchNode.position);
-        }
-
-        return searchNode.position;
-
-    }
-
-    private void calcTraversalCost(Point2d currentPosition) {
+   private void generateTraversalPath(Node startingNode) {
 
         boolean pathCalculated;
         pathCalculated = false;
 
-        PathfindingNode referenceNode = new PathfindingNode(currentPosition, null, 0); // starting node with 0 cost
-        traversalPath.add(referenceNode);
-        Point2d referencePosition = new Point2d(currentPosition);
+        // Add the initial node or nothing else will work
+        Edge referenceEdge = new Edge(null, startingNode, 0); // starting node with 0 cost
+        traversalPath.add(referenceEdge);
 
-        int prevNode = -1;
-
-        while (!pathCalculated) {
-            searchAllDirections(referencePosition);
-
-            prevNode++;
-            if ( prevNode+1 < traversalPath.size()) {
-                referencePosition = traversalPath.get(prevNode+1).position;
-            } else {
-                pathCalculated = true;
-            }
-
-        }
-
+        // perform initial traversal cost calculation and then start recursion through all descendants from the starting node
+        calcTraversalCost(startingNode);
+        recursiveNodeSearch(playingField.getField().getEdgeList().stream().filter(o -> o.referenceNode == startingNode).collect(Collectors.toList()));
         Collections.sort(traversalPath);
-
     }
 
-    private void searchAllDirections(Point2d referencePosition) {
+    /***
+     * Recusively search through connected edges from ancestor to descendant, calling calcTraversalCost
+     *
+     * @param edgeSubset A subset of the edges from the playing field of nodes linked to a reference node
+     */
+    private void recursiveNodeSearch(List<Edge> edgeSubset) {
+        // Is there a better way to do this without recursion? Could very expensive with many many nodes
+        ListIterator<Edge> connectedEdge = edgeSubset.listIterator();
+        Edge nextEdge;
 
-        Point2d positionToCheck;
-        PathfindingNode newNode;
-        PathfindingNode referenceNode;
-        int tempTraversalCost;
+        while (connectedEdge.hasNext()) {
+            nextEdge = connectedEdge.next();
 
-        Optional<PathfindingNode> filterCheckPosition;
-        Optional<PathfindingNode> filterReferencePosition = traversalPath.stream().filter(o -> o.position.equals(referencePosition)).findFirst();
-
-        if (filterReferencePosition.isPresent()) {
-            referenceNode = filterReferencePosition.get();
-        } else {
-            System.out.println("Error cannot find reference");
-            referenceNode = new PathfindingNode(new Point2d(0,0), null,  0);
-        }
-
-        for ( int i = 0; i < 8; i++) {
-
-            switch(i) {
-                case 0: // north
-                    positionToCheck = new Point2d(referencePosition.x, referencePosition.y-1);
-                    break;
-                case 1: // north-east
-                    positionToCheck = new Point2d(referencePosition.x+1, referencePosition.y-1);
-                    break;
-                case 2: // east
-                    positionToCheck = new Point2d(referencePosition.x+1, referencePosition.y);
-                    break;
-                case 3: // south-east
-                    positionToCheck = new Point2d(referencePosition.x+1, referencePosition.y+1);
-                    break;
-                case 4: // south
-                    positionToCheck = new Point2d(referencePosition.x, referencePosition.y+1);
-                    break;
-                case 5: // south-west
-                    positionToCheck = new Point2d(referencePosition.x-1, referencePosition.y+1);
-                    break;
-                case 6: // west
-                    positionToCheck = new Point2d(referencePosition.x-1, referencePosition.y);
-                    break;
-                case 7: // north-west
-                    positionToCheck = new Point2d(referencePosition.x-1, referencePosition.y-1);
-                    break;
-                default:
-                    positionToCheck = new Point2d(0,0);
-                    break;
+            if (nextEdge.checkFlag == false) {
+                Node connectedNode;
+                connectedNode = nextEdge.targetNode;
+                nextEdge.checkFlag = true;
+                calcTraversalCost(connectedNode);
+                recursiveNodeSearch(playingField.getField().getEdgeList().stream().filter(o -> o.referenceNode == connectedNode).collect(Collectors.toList()));
             }
+        }
+    }
 
-            if (isPathTraversable(positionToCheck) ) {
-                Point2d finalPositionToCheck = positionToCheck;
-                filterCheckPosition = traversalPath.stream().filter(o -> o.position.equals(finalPositionToCheck)).findFirst();
+    /***
+     * Search all positions around the reference position
+     * and calculates the aggregate traversal cost
+     *
+     * @param referenceNode the node which the traversal costs will be calculated from
+     */
+    private void calcTraversalCost(Node referenceNode) { //rename to searchAllEdges
 
-                if (filterCheckPosition.isPresent()) {
-                    // adjust the node cost and previous node if the cost of the new traversal is less
-                    newNode = filterCheckPosition.get();
+        Dimension2d positionToCheck;
+        int referenceTraversalCost = 0;
+        int traversalCost;
+        Node finalReferenceNode = referenceNode;
 
-                    tempTraversalCost = referenceNode.traversalCost + playingField.getField()[positionToCheck.x][positionToCheck.y];
-                    if (tempTraversalCost < newNode.traversalCost) {
-                        newNode.previousNode = referenceNode;
-                        newNode.traversalCost = tempTraversalCost;
+        // find the lowest traversal cost where the target node is the reference Node passed through argument
+        Optional<Edge> filterTraversalEdgeToReferenceNode = traversalPath.stream().filter(o -> o.targetNode == finalReferenceNode).findFirst();
+
+        if (filterTraversalEdgeToReferenceNode.isPresent()) { // this should always be true unless something has gone wrong
+            referenceTraversalCost = filterTraversalEdgeToReferenceNode.get().traversalCost; // get the traversal cost to referenceNode
+
+            // find the edges connected to reference node
+            List<Edge> connectedEdges = playingField.getField().getEdgeList().stream().filter(o -> o.referenceNode == finalReferenceNode).collect(Collectors.toList());
+
+            //search through edges in the playing field that are connected to the reference node (where reference node is is the "edge's reference node")
+            Optional<Edge> filterEdge;
+            Edge tempEdge;
+            if (connectedEdges.size() > 0) {
+                for (Edge checkEdge : connectedEdges ) {
+                    // search through the traversal list to see if we have an edge where the edge we are checking already exists
+
+                    // for each connected edge, check to see if we have already saved a value for traversal by searching the connectedEdges's target node
+                    filterEdge = traversalPath.stream().filter(o -> o.targetNode == checkEdge.targetNode).findFirst();
+
+                    if (filterEdge.isPresent()) {
+                        // if we already have a traversal path for the target node then see if we can replace with one of lower cost
+                        // replace the reference / previous node and traversal cost if new cost is lower
+                        tempEdge = filterEdge.get();
+                         if ( tempEdge.traversalCost > (referenceTraversalCost + checkEdge.traversalCost) ) {
+                            tempEdge.traversalCost = (referenceTraversalCost + checkEdge.traversalCost);
+                            tempEdge.referenceNode = referenceNode;
+                        }
+                    } else {
+                        // create new edge
+                        traversalPath.add(new Edge(referenceNode, checkEdge.targetNode, (referenceTraversalCost + checkEdge.traversalCost) ));
                     }
 
+                }
+
+            }
+
+        } else {
+            // !! UH OH we have a problem
+        }
+    }
+
+    private void calcShortestPath(Node startingNode, Node targetNode) {
+
+        // do not redo this calcuation if it has already been performed previously
+        if (shortestPath.size() > 0) {
+            return;
+        }
+
+        // 1. start at target node, find all connected edges and traverse backwards selecting edge
+        // to previous node with the lowest aggregate cost
+        Node previousNode = targetNode;
+        Edge lowestCostEdge;
+        List<Edge> connectedEdges;
+
+        while (previousNode != startingNode) {
+            Node finalPreviousNode = previousNode;
+            connectedEdges = traversalPath.stream().filter(o -> o.targetNode == finalPreviousNode).collect(Collectors.toList());
+            lowestCostEdge = null;
+
+            for (Edge tempEdge : connectedEdges) {
+
+                if (lowestCostEdge == null) {
+                    lowestCostEdge = tempEdge;
                 } else {
-                    // add a new traversal node
-                    traversalPath.add(
-                        new PathfindingNode(positionToCheck, referenceNode,
-                referenceNode.traversalCost + playingField.getField()[positionToCheck.x][positionToCheck.y]) );
+                    if (tempEdge.traversalCost < lowestCostEdge.traversalCost) {
+                        lowestCostEdge = tempEdge;
+                    }
                 }
             }
-        }
-    }
 
-    private boolean isPathTraversable(Point2d node) {
-
-        if ( node.x < 0 || node.x >= Scene.width || node.y < 0 || node.y >= Scene.height) {
-            return false;
-        } else {
-            return true;
+            if (lowestCostEdge != null) {
+                shortestPath.add(lowestCostEdge);
+                previousNode = lowestCostEdge.referenceNode;
+            }
         }
 
+        if (shortestPath.size() > 0) {
+            Collections.reverse(shortestPath);
+        }
+
+        System.out.print("Shortest Path from : " + startingNode.toString() + " -" + targetNode.toString() );
+        for (Edge edge : shortestPath) {
+            System.out.print(" >> " + edge.toString());
+        }
+        System.out.println("");
     }
 
-    public ArrayList<Point2d> getCalculatedPath() {
-        return calculatedPath;
+    public ArrayList<Edge> getCalculatedPath() {
+        return shortestPath;
     }
+
 
 }

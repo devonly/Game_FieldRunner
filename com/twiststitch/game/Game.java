@@ -8,24 +8,23 @@ import com.twiststitch.primative.AnsiColors;
 public class Game {
 
     private int turnNumber;
-    private Scene mainField;
+    private Scene mainScene;
 
     private Entity player;
 
     public Game() {
         System.out.println("Creating Playing Field...");
-        mainField = new Scene();
+        mainScene = new Scene();
         System.out.println("New Field Created...");
-        mainField.showField();
 
         System.out.println("Adding Player...");
-        Player newPlayer = new Player("Player 1", mainField, 100);
-        mainField.addEntity(newPlayer);
+        Player newPlayer = new Player("Player 1", mainScene, 100);
+        mainScene.addEntity(newPlayer);
 
         System.out.println("Adding Enemy...");
-        Agent newAgent = new Agent("Enemy 1", mainField, Agent.SearchAlgorithm.DIJKSTRA, 100);
+        Agent newAgent = new Agent("Enemy 1", mainScene, Agent.SearchAlgorithm.DIJKSTRA, 100);
         newAgent.setTraversalEaseFactor(1.5);
-        mainField.addEntity(newAgent);
+        mainScene.addEntity(newAgent);
 
         turnNumber = 0;
     }
@@ -36,9 +35,9 @@ public class Game {
         while (continueGame) {
             turnNumber++;
             System.out.println("\n<<< Turn Number: " + turnNumber + " >>>");
-            mainField.showFieldWithEntities();
+            mainScene.showField(true);
 
-            for (Entity entity : mainField.getEntities()) {
+            for (Entity entity : mainScene.getEntities()) {
                 System.out.println("[" + entity.getName() + " Turn]" );
 
                 if (player == null) { player = entity; }
@@ -61,7 +60,7 @@ public class Game {
 //                System.out.println("YOU MANAGED TO SURVIVE " + turnNumber + " turns");
                 System.out.println(AnsiColors.ANSI_RED + "GAME OVER MAN! GAME OVER!" + AnsiColors.ANSI_RESET);
                 System.out.println(AnsiColors.ANSI_BLUE + "YOU MANAGED TO SURVIVE " + turnNumber + " turns" + AnsiColors.ANSI_RESET);
-                mainField.showFieldWithEntities();
+                mainScene.showField(true);
             }
 
         }
