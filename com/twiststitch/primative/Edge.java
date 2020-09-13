@@ -26,7 +26,7 @@ public class Edge implements Comparable<Edge> {
         return (this.referenceNode == referenceNode && this.targetNode == targetNode);
     }
 
-    public boolean equals(Dimension2d referencePosition, Dimension2d targetPosition) {
+    public boolean equals(Dimension2D referencePosition, Dimension2D targetPosition) {
         return this.referenceNode.position.equals(referencePosition) && this.targetNode.position.equals(targetPosition);
     }
 
@@ -35,7 +35,7 @@ public class Edge implements Comparable<Edge> {
                 && this.traversalCost == traversalCost);
     }
 
-    public boolean equals(Dimension2d referencePosition, Dimension2d targetPosition, int traversalCost) {
+    public boolean equals(Dimension2D referencePosition, Dimension2D targetPosition, int traversalCost) {
         return this.referenceNode.position.equals(referencePosition) && this.targetNode.position.equals(targetPosition)
                 && this.traversalCost == traversalCost;
     }

@@ -1,10 +1,9 @@
 package com.twiststitch.entity;
 
-import com.twiststitch.game.Field;
-import com.twiststitch.game.Scene;
-import com.twiststitch.primative.Dimension2d;
+import com.twiststitch.game.GameScene;
 import com.twiststitch.primative.Edge;
 import com.twiststitch.primative.Node;
+import java.util.Optional;
 
 /***
  * The Entity class is the base class from which game entities are derived from
@@ -12,100 +11,67 @@ import com.twiststitch.primative.Node;
  * method to make clas concrete.
  *
  * @author  Devon Ly
- * @version 1.0
+ * @version 1.1
  * @since   2020-08-07
  */
 public abstract class Entity {
-    protected Node position;
-    protected int turnsToDelay;
-    protected Scene playingField;
+    protected Node nodePosition;
+    protected Edge traversalEdge;
+    protected int remainingTurnsToDelay;
+    protected GameScene playingField;
     protected String name;
-    protected int health;
+    protected int health, attackDamage;
 
-    public enum Direction { NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST, NORTHWEST }
-    public enum MoveAction { MOVED, BLOCKED, STILLDELAYED, PASSED, QUIT, ERROR }
+    public enum ActionResult { MOVED, BLOCKED, ATTACKING, STILLDELAYED, PASSED, QUIT, ERROR, UNTRAVERSABLE, NOACTIONTAKEN }
 
-    public Entity(String name, Scene playingField, int startingHealth) {
+    public Entity(String name, GameScene playingField, int startingHealth, int attackDamage) {
         this.name = name;
         this.playingField = playingField;
+        this.attackDamage = attackDamage;
 
         // perhaps it should be the game controller's responsibility to determine starting position rather than the entity itself
-        position = playingField.getField().getNode( new Dimension2d( (int) (Field.width * Math.random()),(int)(Field.height * Math.random())) );
-
-        turnsToDelay = 0;
+        int randomNode = (int)(Math.random() * playingField.getGraph().getNodeList().size());
+        nodePosition = playingField.getGraph().getNodeList().get(randomNode);
+        traversalEdge = null;
+        remainingTurnsToDelay = 0;
         this.health = startingHealth;
     }
 
-    public abstract MoveAction move();
-
-    protected MoveAction doMove(Direction direction) {
-
-        if (turnsToDelay > 0 ) return MoveAction.STILLDELAYED;
-
-        Dimension2d translation = calcTranslation(direction);
-        if (isMoveable(translation) ) {
-            // find the node with the destination position
-            Node targetNode = playingField.getField().getNode( new Dimension2d(this.position.position.x + translation.x , this.position.position.y + translation.y ) );
-            // get the edge from current position to destination position
-            Edge traversalEdge = playingField.getField().getEdge(this.position, targetNode);
-
-            turnsToDelay += traversalEdge.traversalCost;
-            this.position = targetNode;
-            return MoveAction.MOVED;
-        } else {
-            return MoveAction.BLOCKED;
-        }
-
-    }
+    public abstract ActionResult performAction();
 
     protected void decreaseTurnsToDelay() {
-        if (turnsToDelay > 0) turnsToDelay--;
+        if (remainingTurnsToDelay > 0) remainingTurnsToDelay--;
+        else traversalEdge = null;
     }
 
-    private Dimension2d calcTranslation(Direction direction) {
-        Dimension2d translation = new Dimension2d();
+    public Node getNodePosition() {
+        return this.nodePosition;
+    }
 
-        switch(direction) {
-            case NORTH:
-                translation.x = 0;  translation.y = -1; break;
-            case NORTHEAST:
-                translation.x = 1;  translation.y = -1; break;
-            case EAST:
-                translation.x = 1;  translation.y = 0; break;
-            case SOUTHEAST:
-                translation.x = 1;  translation.y = 1; break;
-            case SOUTH:
-                translation.x = 0;  translation.y = 1; break;
-            case SOUTHWEST:
-                translation.x = -1; translation.y = 1; break;
-            case WEST:
-                translation.x = -1; translation.y = 0; break;
-            case NORTHWEST:
-                translation.x = -1; translation.y = -1; break;
-            default:
-                break;
+    protected ActionResult setNodePosition(Node targetNode) {
+
+        if (remainingTurnsToDelay > 0) {
+            return ActionResult.STILLDELAYED;
         }
 
-        return translation;
+        Optional<Edge> edgeOptional = playingField.getGraph().getEdgeList().stream().filter( o -> o.equals(this.nodePosition, targetNode)).findFirst();
+//        Edge edge;
+        if (edgeOptional.isPresent()) { // a path to target edge exist, move is possible
+            traversalEdge = edgeOptional.get();
+            remainingTurnsToDelay += traversalEdge.traversalCost; // add traversal cost to turns to delay
+            this.nodePosition = targetNode; // set new position
+            return ActionResult.MOVED;
+        } else { // there is no path to traverse to the target node
+            return ActionResult.UNTRAVERSABLE;
+        }
     }
 
-    private boolean isMoveable(Dimension2d translation) {
-
-        Dimension2d newPosition = new Dimension2d(this.position.position);
-        newPosition.x += translation.x;
-        newPosition.y += translation.y;
-
-        return (newPosition.x >= 0 && newPosition.x < Field.width
-            && newPosition.y >= 0 && newPosition.y < Field.height );
-
+    public int getRemainingTurnsToDelay() {
+        return this.remainingTurnsToDelay;
     }
 
-    public Node getPosition() {
-        return this.position;
-    }
-
-    public int getTurnsToDelay() {
-        return this.turnsToDelay;
+    public Edge getTraversalEdge() {
+        return traversalEdge;
     }
 
     public String getName() {
@@ -122,6 +88,10 @@ public abstract class Entity {
 
     public boolean isAlive() {
         return this.health > 0;
+    }
+
+    public int getHealth() {
+        return this.health;
     }
 
 }

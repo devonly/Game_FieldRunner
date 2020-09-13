@@ -1,85 +1,112 @@
 package com.twiststitch.entity;
 
-import com.twiststitch.game.Scene;
+import com.twiststitch.game.GameScene;
 import com.twiststitch.pathfinding.Pathfinding;
 import com.twiststitch.pathfinding.PathfindingDijkstra;
-import com.twiststitch.primative.Dimension2d;
 import com.twiststitch.primative.Edge;
 import com.twiststitch.primative.Node;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /***
  * The Agent class serves as the player's opponent and/or enemy.
  * It's purpose is to seek and chase the player.
  *
  * @author  Devon Ly
- * @version 1.0
+ * @version 1.1
  * @since   2020-08-07
  */
 public class Agent extends Entity {
 
     private Pathfinding searchAlgorithm;
-    private Entity player;
+    private Entity target;
     private double traversalEaseFactor;
 
     public enum SearchAlgorithm {DIJKSTRA, A_STAR, D_STAR}
 
-    public Agent(String name, Scene playingField, SearchAlgorithm algorithm, int startingHealth) {
-        super(name, playingField, startingHealth);
-        getPlayer();
+    public Agent(String name, GameScene playingField, SearchAlgorithm algorithm, int startingHealth, int attackDamage) {
+        super(name, playingField, startingHealth, attackDamage);
+
+        acquireTarget();
+
+        int nodeIndex;
+        while (this.nodePosition == target.getNodePosition() ) { // ensure the agent's position is not the same as the target node
+            nodeIndex = (int)(Math.random() * playingField.getGraph().getNodeList().size());
+            this.nodePosition = playingField.getGraph().getNodeList().get(nodeIndex);
+        }
 
         switch(algorithm) {
-            case DIJKSTRA: searchAlgorithm = new PathfindingDijkstra(playingField); break;
+            case DIJKSTRA:
+                searchAlgorithm = new PathfindingDijkstra(playingField);
+                if (target != null ) ((PathfindingDijkstra) searchAlgorithm).getNextPosition(this.nodePosition, target.getNodePosition() );
+                break;
             case A_STAR:
             case D_STAR:
             default:
         }
     }
 
-    public MoveAction move() {
+    public ActionResult performAction() {
         decreaseTurnsToDelay();
 
-        if (turnsToDelay == 0) {
-            Node newPosition = searchAlgorithm.getNextPosition(this.position, player.position );
-            Edge traversalEdge = playingField.getField().getEdge(this.position, newPosition);
+        if (target == null) { // if no target aquired, find a target
+            acquireTarget();
+        }
 
+        if (remainingTurnsToDelay == 0) {
 
-            if (traversalEdge.traversalCost != 0) {
-                turnsToDelay += (int)Math.ceil(traversalEdge.traversalCost / traversalEaseFactor) ;
-            }
+            if ( isPlayerAtPosition() ) {
+                // if agent and target player at the same location, attack the player
+                target.damage(this.attackDamage);
+                return ActionResult.ATTACKING;
 
-            this.position = newPosition;
-            System.out.println(this.name + " moved to (" + newPosition.position.x + "," + newPosition.position.y + ")");
-
-            System.out.println("Seeking Player...");
-            if (actionAgainstPlayer()) {
-                System.out.println("Player found & killed");
             } else {
-                System.out.println("Player not found adjacent");
-            }
+                // otherwise move towards the target player
+                Node newPosition = searchAlgorithm.getNextPosition(this.nodePosition, target.nodePosition);
 
-            return MoveAction.MOVED;
+                ActionResult actionResult = setNodePosition(newPosition);
+
+                /*
+                Edge traversalEdge = playingField.getGraph().getEdge(this.nodePosition, newPosition);
+                if (traversalEdge.traversalCost != 0) {
+                    remainingTurnsToDelay += (int)Math.ceil(traversalEdge.traversalCost / traversalEaseFactor) ;
+                }
+                this.nodePosition = newPosition;
+                */
+
+                searchAlgorithm.getNextPosition(this.nodePosition, target.nodePosition);
+                return actionResult;
+//                return ActionResult.MOVED;
+            }
 
         } else {
-            System.out.println( this.name + " still delayed for " + turnsToDelay + " turns");
-            System.out.println( this.name + " passing turn");
-            return MoveAction.STILLDELAYED;
+            return ActionResult.STILLDELAYED;
         }
 
     }
 
-    private void getPlayer() {
+    private void acquireTarget() {
 
         Optional<Entity> filterPlayer;
 
         filterPlayer = playingField.getEntities().stream().filter(o -> o.getName().equals("Player 1")).findFirst();
         if (filterPlayer.isPresent()) {
-            this.player = filterPlayer.get();
+            this.target = filterPlayer.get();
         } else {
-            this.player = null;
+            this.target = null;
         }
 
+    }
+
+    public Entity getTarget() {
+        return target;
+
+    }
+
+    public void setTarget(Entity target) {
+        this.target = target;
     }
 
     public Pathfinding getSearchAlgorithm() {
@@ -94,37 +121,22 @@ public class Agent extends Entity {
         return traversalEaseFactor;
     }
 
+    private boolean isPlayerAtPosition() {
+        return this.nodePosition == target.getNodePosition();
+    }
+
     private boolean isPlayerAdjacent() {
 
-        Dimension2d searchPoint = new Dimension2d();
-
-        // check around to set if player is adjacent or at the same location
-        for (int yOffset = -1; yOffset < 2; yOffset++) {
-            for (int xOffset = -1; xOffset < 2; xOffset++) {
-
-                searchPoint.copy(this.position.position);
-                searchPoint.x += xOffset;
-                searchPoint.y += yOffset;
-
-                // kill the player if next to an agent / enemy
-                if (searchPoint.equals(player.position) ) {
-                    player.kill();
-                    return true;
-                }
-
+        List<Edge> connectedEdges = playingField.getGraph().getEdgeList().stream().filter(o -> o.referenceNode == this.nodePosition).collect(Collectors.toList());
+        for (Edge edge : connectedEdges) {
+            if ( edge.targetNode == target.getNodePosition() ) {
+                return true;
             }
         }
-        return false;
-    }
-
-    // kill the player if found
-    private boolean actionAgainstPlayer() {
-        if (isPlayerAdjacent()) {
-            player.kill();
-            return true;
-        }
 
         return false;
     }
+
+
 
 }

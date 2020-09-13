@@ -1,13 +1,13 @@
 package com.twiststitch.pathfinding;
 
-import com.twiststitch.game.Scene;
+import com.twiststitch.game.GameScene;
 import com.twiststitch.primative.Node;
 
 public abstract class Pathfinding {
 
-    protected Scene playingField;
+    protected GameScene playingField;
 
-    public Pathfinding(Scene playingField) {
+    public Pathfinding(GameScene playingField) {
         this.playingField = playingField;
     }
 

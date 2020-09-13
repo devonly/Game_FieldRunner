@@ -1,0 +1,42 @@
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.TextArea?>
+
+<BorderPane fx:id="mvBorderPane" fx:controller="com.twiststitch.fieldrunner2.mainViewController"
+            xmlns:fx="http://javafx.com/fxml">
+    <top>
+
+    </top>
+
+    <center>
+        <Canvas fx:id="mvCanvas" width="980" height="720" onMouseEntered="#mvCanvasHandleMouseEntered"
+                onMouseExited="#mvCanvasHandleMouseExited" onMouseMoved="#mvCanvasHandleMouseMoved"
+                onMouseClicked="#mvCanvasHandleMouseClicked">
+        </Canvas>
+    </center>
+
+    <bottom>
+<!--        <GridPane fx:id="mvGridPane" alignment="center" vgap="10" hgap="10">-->
+<!--            <Label text="Direction To Move" GridPane.rowIndex="0" GridPane.columnIndex="0"></Label>-->
+<!--            <Button id="mvMoveNorthWest" text="(W) North-West" GridPane.rowIndex="1" GridPane.columnIndex="0"></Button>-->
+<!--        </GridPane>-->
+    </bottom>
+
+    <right>
+        <VBox>
+            <TextArea fx:id="mvGameLog" prefWidth="300" prefHeight="500"></TextArea>
+                <GridPane fx:id="mvButtonPane" alignment="center" vgap="10" hgap="10">
+                    <Button fx:id="mvPassTurn" text="Pass Turn" GridPane.rowIndex="0" GridPane.columnIndex="0" onMouseClicked="#mvPassTurnHandleClick"></Button>
+                    <Button fx:id="mvQuit" text="Quit Game" GridPane.rowIndex="0" GridPane.columnIndex="1" onMouseClicked="#mvQuitHandleClick"></Button>
+                    <Button fx:id="mvRestart" text="Restart Game" GridPane.rowIndex="1" GridPane.columnIndex="0" onMouseClicked="#mvRestartHandleClick"></Button>
+                </GridPane>
+        </VBox>
+
+    </right>
+
+
+</BorderPane>

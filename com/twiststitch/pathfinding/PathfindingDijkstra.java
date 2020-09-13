@@ -1,7 +1,7 @@
 package com.twiststitch.pathfinding;
 
-import com.twiststitch.game.Scene;
-import com.twiststitch.primative.Dimension2d;
+import com.twiststitch.game.GameScene;
+import com.twiststitch.primative.Dimension2D;
 import com.twiststitch.primative.Edge;
 import com.twiststitch.primative.Node;
 import java.util.*;
@@ -12,7 +12,7 @@ public class PathfindingDijkstra extends Pathfinding {
     private ArrayList<Edge> shortestPath; // this is the calculated shorted path
     private ArrayList<Edge> traversalPath;
 
-    public PathfindingDijkstra(Scene playingField) {
+    public PathfindingDijkstra(GameScene playingField) {
         super(playingField);
         traversalPath = new ArrayList<Edge>();
         shortestPath = new ArrayList<Edge>();
@@ -33,13 +33,19 @@ public class PathfindingDijkstra extends Pathfinding {
         shortestPath = new ArrayList<Edge>();
 
         // reset the edge checked flag
-        for ( Edge edge : playingField.getField().getEdgeList() ) {
+        for ( Edge edge : playingField.getGraph().getEdgeList() ) {
             edge.checkFlag = false;
         }
 
         generateTraversalPath(startingNode);
-        calcShortestPath(startingNode, targetNode);
-        return shortestPath.get(0).targetNode;
+
+        if (startingNode != targetNode) {
+            calcShortestPath(startingNode, targetNode);
+            return shortestPath.get(0).targetNode;
+        } else {
+            return targetNode;
+        }
+
     }
 
    private void generateTraversalPath(Node startingNode) {
@@ -53,7 +59,7 @@ public class PathfindingDijkstra extends Pathfinding {
 
         // perform initial traversal cost calculation and then start recursion through all descendants from the starting node
         calcTraversalCost(startingNode);
-        recursiveNodeSearch(playingField.getField().getEdgeList().stream().filter(o -> o.referenceNode == startingNode).collect(Collectors.toList()));
+        recursiveNodeSearch(playingField.getGraph().getEdgeList().stream().filter(o -> o.referenceNode == startingNode).collect(Collectors.toList()));
         Collections.sort(traversalPath);
     }
 
@@ -75,7 +81,7 @@ public class PathfindingDijkstra extends Pathfinding {
                 connectedNode = nextEdge.targetNode;
                 nextEdge.checkFlag = true;
                 calcTraversalCost(connectedNode);
-                recursiveNodeSearch(playingField.getField().getEdgeList().stream().filter(o -> o.referenceNode == connectedNode).collect(Collectors.toList()));
+                recursiveNodeSearch(playingField.getGraph().getEdgeList().stream().filter(o -> o.referenceNode == connectedNode).collect(Collectors.toList()));
             }
         }
     }
@@ -88,7 +94,7 @@ public class PathfindingDijkstra extends Pathfinding {
      */
     private void calcTraversalCost(Node referenceNode) { //rename to searchAllEdges
 
-        Dimension2d positionToCheck;
+        Dimension2D positionToCheck;
         int referenceTraversalCost = 0;
         int traversalCost;
         Node finalReferenceNode = referenceNode;
@@ -100,7 +106,7 @@ public class PathfindingDijkstra extends Pathfinding {
             referenceTraversalCost = filterTraversalEdgeToReferenceNode.get().traversalCost; // get the traversal cost to referenceNode
 
             // find the edges connected to reference node
-            List<Edge> connectedEdges = playingField.getField().getEdgeList().stream().filter(o -> o.referenceNode == finalReferenceNode).collect(Collectors.toList());
+            List<Edge> connectedEdges = playingField.getGraph().getEdgeList().stream().filter(o -> o.referenceNode == finalReferenceNode).collect(Collectors.toList());
 
             //search through edges in the playing field that are connected to the reference node (where reference node is is the "edge's reference node")
             Optional<Edge> filterEdge;
@@ -172,12 +178,6 @@ public class PathfindingDijkstra extends Pathfinding {
         if (shortestPath.size() > 0) {
             Collections.reverse(shortestPath);
         }
-
-        System.out.print("Shortest Path from : " + startingNode.toString() + " -" + targetNode.toString() );
-        for (Edge edge : shortestPath) {
-            System.out.print(" >> " + edge.toString());
-        }
-        System.out.println("");
     }
 
     public ArrayList<Edge> getCalculatedPath() {
