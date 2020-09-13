@@ -18,12 +18,16 @@ import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 
 public class mainViewController {
@@ -41,6 +45,8 @@ public class mainViewController {
 
     private Image playerImage;
     private Image agentImage;
+    private Media backgroundMusic;
+    private MediaPlayer musicPlayer;
 
     // save the current entity whose turn it is
     Entity currentActiveEntity;
@@ -70,6 +76,11 @@ public class mainViewController {
         playerImage = new Image(playerImageFile.toURI().toString());
         agentImage = new Image(agentImageFile.toURI().toString());
 
+        if (musicPlayer != null ) musicPlayer.dispose();
+        backgroundMusic = new Media(new File("src/The_Lights_Galaxia_-_02_-_While_She_Sleeps_Morning_Edit.mp3").toURI().toString());
+        musicPlayer = new MediaPlayer(backgroundMusic);
+        musicPlayer.play();
+        
         turnNumber = 0;
         processTurn();
 
