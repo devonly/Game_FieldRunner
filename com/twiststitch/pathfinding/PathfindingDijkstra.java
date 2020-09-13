@@ -56,7 +56,6 @@ public class PathfindingDijkstra extends Pathfinding {
         // Add the initial node or nothing else will work
         Edge referenceEdge = new Edge(null, startingNode, 0); // starting node with 0 cost
         traversalPath.add(referenceEdge);
-
         // perform initial traversal cost calculation and then start recursion through all descendants from the starting node
         calcTraversalCost(startingNode);
         recursiveNodeSearch(playingField.getGraph().getEdgeList().stream().filter(o -> o.referenceNode == startingNode).collect(Collectors.toList()));
@@ -175,9 +174,7 @@ public class PathfindingDijkstra extends Pathfinding {
             }
         }
 
-        if (shortestPath.size() > 0) {
-            Collections.reverse(shortestPath);
-        }
+        if (shortestPath.size() > 0) Collections.reverse(shortestPath);
     }
 
     public ArrayList<Edge> getCalculatedPath() {

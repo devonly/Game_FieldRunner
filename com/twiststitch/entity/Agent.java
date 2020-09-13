@@ -5,7 +5,6 @@ import com.twiststitch.pathfinding.Pathfinding;
 import com.twiststitch.pathfinding.PathfindingDijkstra;
 import com.twiststitch.primative.Edge;
 import com.twiststitch.primative.Node;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -65,20 +64,9 @@ public class Agent extends Entity {
             } else {
                 // otherwise move towards the target player
                 Node newPosition = searchAlgorithm.getNextPosition(this.nodePosition, target.nodePosition);
-
                 ActionResult actionResult = setNodePosition(newPosition);
-
-                /*
-                Edge traversalEdge = playingField.getGraph().getEdge(this.nodePosition, newPosition);
-                if (traversalEdge.traversalCost != 0) {
-                    remainingTurnsToDelay += (int)Math.ceil(traversalEdge.traversalCost / traversalEaseFactor) ;
-                }
-                this.nodePosition = newPosition;
-                */
-
                 searchAlgorithm.getNextPosition(this.nodePosition, target.nodePosition);
                 return actionResult;
-//                return ActionResult.MOVED;
             }
 
         } else {
@@ -136,7 +124,5 @@ public class Agent extends Entity {
 
         return false;
     }
-
-
 
 }

@@ -55,7 +55,6 @@ public abstract class Entity {
         }
 
         Optional<Edge> edgeOptional = playingField.getGraph().getEdgeList().stream().filter( o -> o.equals(this.nodePosition, targetNode)).findFirst();
-//        Edge edge;
         if (edgeOptional.isPresent()) { // a path to target edge exist, move is possible
             traversalEdge = edgeOptional.get();
             remainingTurnsToDelay += traversalEdge.traversalCost; // add traversal cost to turns to delay

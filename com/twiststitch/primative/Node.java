@@ -40,7 +40,6 @@ public class Node implements Comparable<Node> {
      * Otherwise return 0 when x and y are same in both nodes
      */
     public int compareTo(Node otherNode) {
-
         if ( (this.position.x < otherNode.position.x) || (this.position.y < otherNode.position.y) ) {
             return -1;
         } else if ( (this.position.x > otherNode.position.x) || (this.position.y > otherNode.position.y) ) {
@@ -48,9 +47,7 @@ public class Node implements Comparable<Node> {
         } else {
             return 0;
         }
-
     }
-
 
     public String toString() {
         return new StringBuilder().append(" (").append(position.toString()).append(",s:").append(size).append(")").toString();

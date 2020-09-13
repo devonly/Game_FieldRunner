@@ -10,11 +10,9 @@ public class GameScene {
     protected Graph graph;
 
     public GameScene() {
-
         graph = new Graph();
         graph.initializeRandomField();
         entities = new ArrayList<Entity>();
-
     }
 
     public void addEntity(Entity entity) {
