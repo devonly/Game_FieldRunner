@@ -1,4 +1,4 @@
-package com.twiststitch.fieldrunner2;
+package com.twiststitch.fieldrunner;
 
 import com.twiststitch.entity.Agent;
 import com.twiststitch.entity.Entity;
